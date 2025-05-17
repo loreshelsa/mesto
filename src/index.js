@@ -1,7 +1,7 @@
 import "./index.css";
-import { initialCards } from "./../scripts/cards";
+import { initialCards } from "./scripts/cards";
 import {renderCard, removeCard, toggleLike} from "./components/card";
-import {activePopup, openPopup, closePopup} from "./components/modal";
+import {openPopup, closePopup} from "./components/modal";
 
 const cardTemplate = document.querySelector("#card-template").content;
 const cardContainer = document.querySelector(".places__list");
@@ -19,9 +19,9 @@ const previewPopupCloseButton = previewPopup.querySelector(".popup__close");
 const popupImage = previewPopup.querySelector(".popup__image");
 const popupDescription = previewPopup.querySelector(".popup__caption");
 
-const formElement = document.forms["edit-profile"];
-const inputName = formElement.elements["name"];
-const inputDescription = formElement.elements["description"];
+const editProfileForm = document.forms["edit-profile"];
+const inputName = editProfileForm.elements["name"];
+const inputDescription = editProfileForm.elements["description"];
 
 const profileName = document.querySelector(".profile__title");
 const profileDescription = document.querySelector(".profile__description");
@@ -57,16 +57,11 @@ function openEditPopup(event) {
   openPopup(editPopup);
 }
 
-function handleFormSubmit(event) {
+function editProfileFormSubmit(event) {
   event.preventDefault();
   profileName.textContent = inputName.value;
   profileDescription.textContent = inputDescription.value;
   closePopup(editPopup);
-}
-
-function clearNewCardForm() {
-  inputNameCard.value = "";
-  inputCardLink.value = "";
 }
 
 function addNewCard(event) {
@@ -74,8 +69,8 @@ function addNewCard(event) {
   const newCard = { name: inputNameCard.value, link: inputCardLink.value };
   const card = renderCard(newCard, cardTemplate, removeCard, toggleLike, openPreview);
   cardContainer.prepend(card);
-  closePopup(activePopup);
-  clearNewCardForm();
+  closePopup(newCardPopup);
+  newPlaceForm.reset();
 }
 
 document.addEventListener("DOMContentLoaded", renderList);
@@ -85,12 +80,6 @@ editButton.addEventListener("click", openEditPopup);
 editPopupCloseButton.addEventListener("click", (event) => {
   event.stopPropagation();
   closePopup(editPopup);
-});
-
-document.addEventListener("keydown", function (event) {
-  if (event.key?.toLowerCase() === "escape") {
-    closePopup(activePopup);
-  }
 });
 
 addCardButton.addEventListener("click", (event) => {
@@ -108,7 +97,7 @@ previewPopupCloseButton.addEventListener("click", (event) => {
   closePopup(previewPopup);
 });
 
-formElement.addEventListener("submit", handleFormSubmit);
+editProfileForm.addEventListener("submit", editProfileFormSubmit);
 
 newPlaceForm.addEventListener("submit", addNewCard);
 
