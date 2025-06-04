@@ -1,7 +1,15 @@
 import "./index.css";
 import { renderCard, toggleLike } from "./components/card";
 import { openPopup, closePopup } from "./components/modal";
-import { enableValidation, clearValidation } from "./validation";
+import { enableValidation, clearValidation } from "./core/validation";
+import {
+  getCards,
+  getUsers,
+  updateProfileInfo,
+  updateAvatar,
+  addNewPost,
+  deletePost,
+} from "./core/apiService";
 
 const cardTemplate = document.querySelector("#card-template").content;
 const cardContainer = document.querySelector(".places__list");
@@ -27,29 +35,21 @@ const profileName = document.querySelector(".profile__title");
 const profileDescription = document.querySelector(".profile__description");
 
 const profileAvatar = document.querySelector(".profile__image");
-const previewPopupAvatar = document.querySelector(".popup_type_new-avatar");
-const previewPopupAvatarCloseButton =
-  previewPopupAvatar.querySelector(".popup__close");
-const newAvatarForm = document.forms["new-avatar"];
-const inputAvatarLink = newAvatarForm.elements["link"];
+const editAvatarPopup = document.querySelector(".popup_type_new-avatar");
+const editAvatarPopupCloseButton =
+  editAvatarPopup.querySelector(".popup__close");
+const editAvatarForm = document.forms["new-avatar"];
+const inputAvatarLink = editAvatarForm.elements["link"];
 
 const newPlaceForm = document.forms["new-place"];
 const inputNameCard = newPlaceForm.elements["place-name"];
 const inputCardLink = newPlaceForm.elements["link"];
 
 const cardRemovePopup = document.querySelector(".popup_type_remove-card");
-const previewPopupDeleteCardCloseButton =
+const cardRemovePopupCloseButton =
   cardRemovePopup.querySelector(".popup__close");
 const cardRemoveForm = document.forms["delete-card"];
 const cardRemoveElement = cardRemoveForm.elements["card-id"];
-
-const config = {
-  baseUrl: "https://nomoreparties.co/v1/wff-cohort-39",
-  headers: {
-    authorization: "b71db5e8-caa7-425b-948f-03c1ab4b88bc",
-    "Content-Type": "application/json",
-  },
-};
 
 let user = null;
 let currentCard = null;
@@ -67,7 +67,7 @@ function addAnimationPopups() {
   editPopup.classList.add("popup_is-animated");
   previewPopup.classList.add("popup_is-animated");
   newCardPopup.classList.add("popup_is-animated");
-  previewPopupAvatar.classList.add("popup_is-animated");
+  editAvatarPopup.classList.add("popup_is-animated");
 }
 
 function renderList(cards) {
@@ -90,10 +90,10 @@ function openPreview(card) {
   openPopup(previewPopup);
 }
 
-function openChangeAvatarPopup(event) {
+function openEditAvatarPopup(event) {
   event.stopPropagation();
-  clearValidation(newAvatarForm, validationObject);
-  openPopup(previewPopupAvatar);
+  clearValidation(editAvatarForm, validationObject);
+  openPopup(editAvatarFormSubmitPopupAvatar);
 }
 
 function openEditPopup(event) {
@@ -108,11 +108,15 @@ function editProfileFormSubmit(event) {
   event.preventDefault();
   const saveButton = editPopup.querySelector(".popup__button");
   saveButton.textContent = "Сохранение...";
-  addProfileInfo(inputName.value, inputDescription.value).then((data) => {
-    fillUserInfo(data);
-    saveButton.textContent = "Сохранить";
-    closePopup(editPopup);
-  });
+  updateProfileInfo(inputName.value, inputDescription.value)
+    .then((data) => {
+      fillUserInfo(data);
+      saveButton.textContent = "Сохранить";
+      closePopup(editPopup);
+    })
+    .catch((err) => {
+      console.log("Ошибка. Запрос не выполнен: ", err);
+    });
 }
 
 function addNewCard(event) {
@@ -120,19 +124,23 @@ function addNewCard(event) {
   const saveButton = newCardPopup.querySelector(".popup__button");
   saveButton.textContent = "Сохранение...";
   const newCard = { name: inputNameCard.value, link: inputCardLink.value };
-  addNewPost(newCard).then((res) => {
-    const card = renderCard(
-      { ...res, canDelete: true },
-      cardTemplate,
-      openRemoveCardPopup,
-      toggleLike,
-      openPreview
-    );
-    cardContainer.prepend(card);
-    saveButton.textContent = "Сохранить";
-    closePopup(newCardPopup);
-    newPlaceForm.reset();
-  });
+  addNewPost(newCard)
+    .then((res) => {
+      const card = renderCard(
+        { ...res, canDelete: true },
+        cardTemplate,
+        openRemoveCardPopup,
+        toggleLike,
+        openPreview
+      );
+      cardContainer.prepend(card);
+      saveButton.textContent = "Сохранить";
+      closePopup(newCardPopup);
+      newPlaceForm.reset();
+    })
+    .catch((err) => {
+      console.log("Ошибка. Запрос не выполнен: ", err);
+    });
 }
 
 function openRemoveCardPopup(cardElement, cardId) {
@@ -144,40 +152,52 @@ function openRemoveCardPopup(cardElement, cardId) {
 function removeCardSubmit(event) {
   event.preventDefault();
   const cardId = cardRemoveElement.value;
-  deletePost(cardId).then(() => {
-    currentCard.remove();
-    closePopup(cardRemovePopup);
-  });
+  deletePost(cardId)
+    .then(() => {
+      currentCard.remove();
+      closePopup(cardRemovePopup);
+    })
+    .catch((err) => {
+      console.log("Ошибка. Запрос не выполнен: ", err);
+    });
 }
 
 function editAvatarFormSubmit(event) {
   event.preventDefault();
-  const saveButton = previewPopupAvatar.querySelector(".popup__button");
+  const saveButton = editAvatarPopup.querySelector(".popup__button");
   saveButton.textContent = "Сохранение...";
   const newAvatarLink = inputAvatarLink.value;
-  updateAvatar(newAvatarLink).then((res) => {
-    fillUserInfo(res);
-    saveButton.textContent = "Сохранить";
-    closePopup(previewPopupAvatar);
-    newAvatarForm.reset();
-  });
+  updateAvatar(newAvatarLink)
+    .then((res) => {
+      fillUserInfo(res);
+      saveButton.textContent = "Сохранить";
+      closePopup(editAvatarPopup);
+      editAvatarForm.reset();
+    })
+    .catch((err) => {
+      console.log("Ошибка. Запрос не выполнен: ", err);
+    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  Promise.all([getCards(), getUsers()]).then(([cardsData, userData]) => {
-    user = userData;
-    fillUserInfo(user);
-    const cardList = cardsData.map((card) => {
-      const canDelete = card.owner._id === user._id;
-      const liked = card.likes.some((i) => i._id === user._id);
-      return {
-        ...card,
-        canDelete,
-        liked,
-      };
+  Promise.all([getCards(), getUsers()])
+    .then(([cardsData, userData]) => {
+      user = userData;
+      fillUserInfo(user);
+      const cardList = cardsData.map((card) => {
+        const canDelete = card.owner._id === user._id;
+        const liked = card.likes.some((i) => i._id === user._id);
+        return {
+          ...card,
+          canDelete,
+          liked,
+        };
+      });
+      renderList(cardList);
+    })
+    .catch((err) => {
+      console.log("Ошибка. Запрос не выполнен: ", err);
     });
-    renderList(cardList);
-  });
 });
 
 editButton.addEventListener("click", openEditPopup);
@@ -205,113 +225,27 @@ previewPopupCloseButton.addEventListener("click", (event) => {
   closePopup(previewPopup);
 });
 
-previewPopupAvatarCloseButton.addEventListener("click", (event) => {
+editAvatarPopupCloseButton.addEventListener("click", (event) => {
   event.stopPropagation();
-  newAvatarForm.reset();
-  closePopup(previewPopupAvatar);
+  editAvatarForm.reset();
+  closePopup(editAvatarPopup);
 });
 
-previewPopupDeleteCardCloseButton.addEventListener("click", (event) => {
+cardRemovePopupCloseButton.addEventListener("click", (event) => {
   event.stopPropagation();
   closePopup(cardRemovePopup);
 });
 
-profileAvatar.addEventListener("click", openChangeAvatarPopup);
+profileAvatar.addEventListener("click", openEditAvatarPopup);
 
 editProfileForm.addEventListener("submit", editProfileFormSubmit);
 
 newPlaceForm.addEventListener("submit", addNewCard);
 
-newAvatarForm.addEventListener("submit", editAvatarFormSubmit);
+editAvatarForm.addEventListener("submit", editAvatarFormSubmit);
 
 cardRemoveForm.addEventListener("submit", removeCardSubmit);
 
 addAnimationPopups();
 
 enableValidation(validationObject);
-
-function getCards() {
-  return fetch(`${config.baseUrl}/cards`, {
-    headers: config.headers,
-  })
-    .then((res) => {
-      if (res.ok) {
-        return res.json();
-      }
-      return Promise.reject(`Ошибка: ${res.status}`);
-    })
-    .catch((err) => {
-      console.log("Ошибка. Запрос не выполнен: ", err);
-    });
-}
-
-function getUsers() {
-  return fetch(`${config.baseUrl}/users/me`, {
-    headers: config.headers,
-  })
-    .then((res) => {
-      if (res.ok) {
-        return res.json();
-      }
-      return Promise.reject(`Ошибка: ${res.status}`);
-    })
-    .catch((err) => {
-      console.log("Ошибка. Запрос не выполнен: ", err);
-    });
-}
-
-function addProfileInfo(profileName, profileDescription) {
-  return fetch(`${config.baseUrl}/users/me`, {
-    method: "PATCH",
-    headers: config.headers,
-    body: JSON.stringify({
-      name: profileName,
-      about: profileDescription,
-    }),
-  }).then((res) => {
-    if (res.ok) {
-      return res.json();
-    }
-    return Promise.reject(`Ошибка: ${res.status}`);
-  });
-}
-
-function updateAvatar(avatarLink) {
-  return fetch(`${config.baseUrl}/users/me/avatar`, {
-    method: "PATCH",
-    headers: config.headers,
-    body: JSON.stringify({
-      avatar: avatarLink,
-    }),
-  }).then((res) => {
-    if (res.ok) {
-      return res.json();
-    }
-    return Promise.reject(`Ошибка: ${res.status}`);
-  });
-}
-
-function addNewPost(newCard) {
-  return fetch(`${config.baseUrl}/cards`, {
-    method: "POST",
-    headers: config.headers,
-    body: JSON.stringify(newCard),
-  }).then((res) => {
-    if (res.ok) {
-      return res.json();
-    }
-    return Promise.reject(`Ошибка: ${res.status}`);
-  });
-}
-
-function deletePost(cardId) {
-  return fetch(`${config.baseUrl}/cards/${cardId}`, {
-    method: "DELETE",
-    headers: config.headers,
-  }).then((res) => {
-    if (res.ok) {
-      return res.json();
-    }
-    return Promise.reject(`Ошибка: ${res.status}`);
-  });
-}

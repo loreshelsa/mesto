@@ -1,10 +1,4 @@
-const config = {
-  baseUrl: "https://nomoreparties.co/v1/wff-cohort-39",
-  headers: {
-    authorization: "b71db5e8-caa7-425b-948f-03c1ab4b88bc",
-    "Content-Type": "application/json",
-  },
-};
+import { addLike, removeLike } from "../core/apiService";
 
 function renderCard(card, cardTemplate, remove, like, openPreview) {
   const cardElement = cardTemplate
@@ -47,40 +41,24 @@ function renderCard(card, cardTemplate, remove, like, openPreview) {
 
 function toggleLike(likeBtn, cardId, countLikeElement) {
   if (likeBtn.classList.contains("card__like-button_is-active")) {
-    removeLike(cardId).then((res) => {
-      countLikeElement.textContent = res.likes.length;
-      likeBtn.classList.remove("card__like-button_is-active");
-    });
+    removeLike(cardId)
+      .then((res) => {
+        countLikeElement.textContent = res.likes.length;
+        likeBtn.classList.remove("card__like-button_is-active");
+      })
+      .catch((err) => {
+        console.log("Ошибка. Запрос не выполнен: ", err);
+      });
   } else {
-    addLike(cardId).then((res) => {
-      countLikeElement.textContent = res.likes.length;
-      likeBtn.classList.add("card__like-button_is-active");
-    });
+    addLike(cardId)
+      .then((res) => {
+        countLikeElement.textContent = res.likes.length;
+        likeBtn.classList.add("card__like-button_is-active");
+      })
+      .catch((err) => {
+        console.log("Ошибка. Запрос не выполнен: ", err);
+      });
   }
-}
-
-function addLike(cardId) {
-  return fetch(`${config.baseUrl}/cards/likes/${cardId}`, {
-    method: "PUT",
-    headers: config.headers,
-  }).then((res) => {
-    if (res.ok) {
-      return res.json();
-    }
-    return Promise.reject(`Ошибка: ${res.status}`);
-  });
-}
-
-function removeLike(cardId) {
-  return fetch(`${config.baseUrl}/cards/likes/${cardId}`, {
-    method: "DELETE",
-    headers: config.headers,
-  }).then((res) => {
-    if (res.ok) {
-      return res.json();
-    }
-    return Promise.reject(`Ошибка: ${res.status}`);
-  });
 }
 
 export { renderCard, toggleLike };
