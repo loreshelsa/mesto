@@ -1,2 +1,2 @@
-# Проектная работа 
-https://github.com/loreshelsa/mesto-project-ff
+# Проектная работа
+https://loreshelsa.github.io/mesto-project-ff
