@@ -92,8 +92,9 @@ function openPreview(card) {
 
 function openEditAvatarPopup(event) {
   event.stopPropagation();
+  editAvatarForm.reset();
   clearValidation(editAvatarForm, validationObject);
-  openPopup(editAvatarFormSubmitPopupAvatar);
+  openPopup(editAvatarPopup);
 }
 
 function openEditPopup(event) {
@@ -104,25 +105,30 @@ function openEditPopup(event) {
   openPopup(editPopup);
 }
 
+function toggleButtonState(popup, isRequest) {
+  const btn = popup.querySelector(".popup__button");
+  btn.textContent = isRequest ? "Сохранение..." : "Сохранить";
+}
+
 function editProfileFormSubmit(event) {
   event.preventDefault();
-  const saveButton = editPopup.querySelector(".popup__button");
-  saveButton.textContent = "Сохранение...";
+  toggleButtonState(editPopup, true);
   updateProfileInfo(inputName.value, inputDescription.value)
     .then((data) => {
       fillUserInfo(data);
-      saveButton.textContent = "Сохранить";
       closePopup(editPopup);
     })
     .catch((err) => {
       console.log("Ошибка. Запрос не выполнен: ", err);
+    })
+    .finally(() => {
+      toggleButtonState(editPopup, false);
     });
 }
 
 function addNewCard(event) {
   event.preventDefault();
-  const saveButton = newCardPopup.querySelector(".popup__button");
-  saveButton.textContent = "Сохранение...";
+  toggleButtonState(newCardPopup, true);
   const newCard = { name: inputNameCard.value, link: inputCardLink.value };
   addNewPost(newCard)
     .then((res) => {
@@ -134,12 +140,14 @@ function addNewCard(event) {
         openPreview
       );
       cardContainer.prepend(card);
-      saveButton.textContent = "Сохранить";
       closePopup(newCardPopup);
       newPlaceForm.reset();
     })
     .catch((err) => {
       console.log("Ошибка. Запрос не выполнен: ", err);
+    })
+    .finally(() => {
+      toggleButtonState(newCardPopup, false);
     });
 }
 
@@ -164,18 +172,19 @@ function removeCardSubmit(event) {
 
 function editAvatarFormSubmit(event) {
   event.preventDefault();
-  const saveButton = editAvatarPopup.querySelector(".popup__button");
-  saveButton.textContent = "Сохранение...";
+  toggleButtonState(editAvatarPopup, true);
   const newAvatarLink = inputAvatarLink.value;
   updateAvatar(newAvatarLink)
     .then((res) => {
       fillUserInfo(res);
-      saveButton.textContent = "Сохранить";
       closePopup(editAvatarPopup);
       editAvatarForm.reset();
     })
     .catch((err) => {
       console.log("Ошибка. Запрос не выполнен: ", err);
+    })
+    .finally(() => {
+      toggleButtonState(editAvatarPopup, false);
     });
 }
 
@@ -204,19 +213,18 @@ editButton.addEventListener("click", openEditPopup);
 
 editPopupCloseButton.addEventListener("click", (event) => {
   event.stopPropagation();
-  editProfileForm.reset();
   closePopup(editPopup);
 });
 
 addCardButton.addEventListener("click", (event) => {
   event.stopPropagation();
+  newPlaceForm.reset();
   clearValidation(newPlaceForm, validationObject);
   openPopup(newCardPopup);
 });
 
 newCardPopupCloseButton.addEventListener("click", (event) => {
   event.stopPropagation();
-  newPlaceForm.reset();
   closePopup(newCardPopup);
 });
 
@@ -227,7 +235,6 @@ previewPopupCloseButton.addEventListener("click", (event) => {
 
 editAvatarPopupCloseButton.addEventListener("click", (event) => {
   event.stopPropagation();
-  editAvatarForm.reset();
   closePopup(editAvatarPopup);
 });
 

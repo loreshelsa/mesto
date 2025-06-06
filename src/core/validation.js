@@ -1,6 +1,5 @@
 let validationSelectors = null;
 
-//найти все формы и вызвать функцию которая вешает слушатель
 function enableValidation(validationObject) {
   validationSelectors = validationObject;
   const formList = Array.from(
@@ -11,7 +10,6 @@ function enableValidation(validationObject) {
   });
 }
 
-// вешает слушатели
 function setEventListeners(formElement) {
   const inputList = Array.from(
     formElement.querySelectorAll(validationSelectors.inputSelector)
@@ -28,7 +26,6 @@ function setEventListeners(formElement) {
   });
 }
 
-//очищает ошибки валидации формы и делает кнопку неактивной
 function clearValidation(formElement, validationConfig) {
   const inputList = Array.from(
     formElement.querySelectorAll(validationConfig.inputSelector)
@@ -36,20 +33,18 @@ function clearValidation(formElement, validationConfig) {
   inputList.forEach((inputElement) => {
     hideInputError(formElement, inputElement);
   });
+  const saveButton = formElement.querySelector(".popup__button");
+  disableSubmitButton(saveButton, validationConfig.inactiveButtonClass);
 }
 
-// показать сообщение об ошибке и убрать сообщение об ошибке
 function isValid(formElement, inputElement) {
+  console.info(inputElement.validity);
   if (!inputElement.validity.valid) {
     let errorMessage = inputElement.dataset.errorMessage;
-    if (inputElement.validity.tooShort) {
-      errorMessage = inputElement.dataset.errorLengthMessage;
-    } 
-    if (inputElement.validity.typeMismatch) {
-      errorMessage = inputElement.dataset.errorUrlMessage;
-    }
     if (inputElement.validity.patternMismatch) {
       errorMessage = inputElement.dataset.errorSymbolsMessage;
+    } else {
+      errorMessage = inputElement.validationMessage;
     }
     showInputError(formElement, inputElement, errorMessage);
   } else {
@@ -57,7 +52,6 @@ function isValid(formElement, inputElement) {
   }
 }
 
-// добавляем класс ошибки и класс активации
 const showInputError = (formElement, inputElement, errorMessage) => {
   const errorElement = formElement.querySelector(`.${inputElement.id}-error`);
   inputElement.classList.add(validationSelectors.inputErrorClass);
@@ -72,21 +66,27 @@ const hideInputError = (formElement, inputElement) => {
   errorElement.textContent = "";
 };
 
-//проверяет наличие невалидного поля
 function hasInvalidInput(inputList) {
   return inputList.some((inputElement) => {
     return !inputElement.validity.valid;
   });
 }
 
-//включить и отключить кнопку
+const disableSubmitButton = (buttonElement, className) => {
+  buttonElement.disabled = true;
+  buttonElement.classList.add(className);
+};
+
+const enableSubmitButton = (buttonElement, className) => {
+  buttonElement.disabled = false;
+  buttonElement.classList.remove(className);
+};
+
 function toggleButtonState(inputList, buttonElement) {
   if (hasInvalidInput(inputList)) {
-    buttonElement.disabled = true;
-    buttonElement.classList.add(validationSelectors.inactiveButtonClass);
+    disableSubmitButton(buttonElement, validationSelectors.inactiveButtonClass);
   } else {
-    buttonElement.disabled = false;
-    buttonElement.classList.remove(validationSelectors.inactiveButtonClass);
+    enableSubmitButton(buttonElement, validationSelectors.inactiveButtonClass);
   }
 }
 
